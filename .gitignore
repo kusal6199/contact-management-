@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+
+# Environment-specific config
+application-dev.properties
+src/main/resources/templates/user/clientId.txt

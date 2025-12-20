@@ -5,8 +5,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -26,6 +26,9 @@ public class SecurityConfig {
     @Autowired
     SecurityCustomUserDetailService service;
 
+    @Autowired
+    OAuthAuthenticationSuccessHandler oAuthAuthenticationSuccessHandler;
+
     @Bean
     public AuthenticationProvider authenticationProvider() {
 
@@ -44,7 +47,28 @@ public class SecurityConfig {
             authorize.anyRequest().permitAll();
         });
 
-        httpSecurity.formLogin(Customizer.withDefaults());
+        httpSecurity.formLogin(loginForm -> {
+            loginForm.loginPage("/login")
+                    .loginProcessingUrl("/authenticate")
+                    // .successForwardUrl("/user/dashboard")
+                    .defaultSuccessUrl("/user/profile", true)
+                    // .failureForwardUrl("/login?error=true")
+                    .usernameParameter("email")
+                    .passwordParameter("password")
+                    .permitAll();
+        });
+
+        httpSecurity.csrf(AbstractHttpConfigurer::disable);
+
+        httpSecurity.oauth2Login(oauth -> {
+            oauth.loginPage("/login");
+            oauth.successHandler(oAuthAuthenticationSuccessHandler);
+        });
+
+        httpSecurity.logout(formLogout -> {
+            formLogout.logoutUrl("/do-logout");
+            formLogout.logoutSuccessUrl("/login?logout=true");
+        });
 
         return httpSecurity.build();
     }

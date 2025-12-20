@@ -31,10 +31,13 @@ public class Contact {
     private String description;
     @Lob
     @Column(columnDefinition = "Text")
+
     private String picture;
     private boolean favorite = false;
     private String websiteLink;
     private String linkedInLink;
+
+    private String cloudinaryImagePublicId;
 
     @ManyToOne
     private User user;

@@ -1,5 +1,9 @@
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: parent}"></html>
+<!-- <!DOCTYPE html>
+<html
+  lang="en"
+  xmlns:th="http://www.thymeleaf.org"
+  th:replace="~{base :: parent(~{::content}, ~{::title}, ~{::script})}"
+>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,4 +17,21 @@
   <body>
     <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
   </body>
+</html> -->
+
+<!DOCTYPE html>
+<html
+  lang="en"
+  xmlns:th="http://www.thymeleaf.org"
+  th:replace="~{base :: parent(~{::content}, ~{::title}, ~{::script})}"
+>
+  <title>Home Page</title>
+
+  <section th:fragment="content">
+    <h1 class="text-3xl font-bold">Welcome to the Home Page</h1>
+  </section>
+
+  <script th:fragment="script">
+    console.log("Home page loaded");
+  </script>
 </html>

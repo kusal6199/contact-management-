@@ -30,10 +30,8 @@ public class PageController {
     }
 
     @RequestMapping("/home")
-    public String home(Model model) {
-        model.addAttribute("name", "Kushal");
-        model.addAttribute("email", "kushal@gmail.com");
-        model.addAttribute("github", "https://github.com/kusal6199/JournalApp-Backend-SprinngBoot");
+    public String home() {
+
         return "home";
     }
 
@@ -73,16 +71,6 @@ public class PageController {
     @RequestMapping(value = "/do-register", method = RequestMethod.POST)
     public String processRegistration(@Valid @ModelAttribute UserForm userForm, BindingResult rBindingResult,
             HttpSession session) {
-        // User user = User.builder()
-        // .name(userForm.getName())
-        // .email(userForm.getEmail())
-        // .about(userForm.getAbout())
-        // .password(userForm.getPassword())
-        // .phoneNumber(userForm.getPhoneNumber())
-        // .profilePic(
-        // "https://thumbs.dreamstime.com/b/default-user-profile-icon-social-media-picture-flat-symbol-round-grey-shape-person-set-gender-neutral-sign-simple-circular-387560956.jpg")
-
-        // .build();
 
         if (rBindingResult.hasErrors()) {
             return "register";
@@ -97,7 +85,7 @@ public class PageController {
         user.setProfilePic(
                 "https://thumbs.dreamstime.com/b/default-user-profile-icon-social-media-picture-flat-symbol-round-grey-shape-person-set-gender-neutral-sign-simple-circular-387560956.jpg");
 
-        User saveUser = userService.saveUser(user);
+        userService.saveUser(user);
 
         Message message = Message.builder().content("Registration Success").messageType(MessageType.green).build();
 
@@ -105,4 +93,5 @@ public class PageController {
 
         return "redirect:/register";
     }
+
 }

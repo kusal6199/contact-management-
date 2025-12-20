@@ -32,7 +32,7 @@ import lombok.Setter;
 @Table(name = "users")
 @Getter
 @Setter
-@Builder
+// @Builder
 
 @AllArgsConstructor
 @NoArgsConstructor
