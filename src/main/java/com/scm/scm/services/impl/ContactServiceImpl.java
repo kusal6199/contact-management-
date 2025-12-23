@@ -19,6 +19,9 @@ public class ContactServiceImpl implements ContactService {
     @Autowired
     ContactRepository contactRepository;
 
+    @Autowired
+    ImageServiceImpl imageServiceImpl;
+
     @Override
     public Contact saveContact(Contact contact) {
         String contactId = UUID.randomUUID().toString();
@@ -44,7 +47,7 @@ public class ContactServiceImpl implements ContactService {
         contact2.setPicture(contact.getPicture());
         contact2.setSocialLinks(contact.getSocialLinks());
 
-        return Optional.ofNullable(contactRepository.save(contact2));
+        return Optional.of(contactRepository.save(contact2));
     }
 
     @Override
@@ -63,6 +66,10 @@ public class ContactServiceImpl implements ContactService {
     public void deleteContact(String id) {
         Contact contact = contactRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("no such contact found"));
+
+        if (contact.getCloudinaryImagePublicId() != null) {
+            imageServiceImpl.deleteImage(contact.getCloudinaryImagePublicId());
+        }
         contactRepository.delete(contact);
     }
 

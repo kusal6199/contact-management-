@@ -245,11 +245,11 @@
                 id="image_file_input"
               />
 
-              <p th:if="${#fields.hasErrors('contactImage')}"
-                 th:errors="*{contactImage}"
-                 class="text-sm text-red-600 dark:text-red-400"
+              <p
+                th:if="${#fields.hasErrors('contactImage')}"
+                th:errors="*{contactImage}"
+                class="text-sm text-red-600 dark:text-red-400"
               ></p>
-
 
               <img
                 class="max-h-52 mx-auto rounded-lg shadow m-3"

@@ -8,25 +8,24 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.scm.scm.entities.Contact;
-
-import com.scm.scm.forms.ContactForm;
+import com.scm.scm.helper.ContactForm;
+import com.scm.scm.helper.CreateContact;
 import com.scm.scm.helper.Helper;
 import com.scm.scm.helper.Message;
 import com.scm.scm.helper.MessageType;
+import com.scm.scm.helper.UpdateContact;
 import com.scm.scm.services.ContactService;
 import com.scm.scm.services.ImageService;
 import com.scm.scm.services.UserService;
-
-import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.UUID;
@@ -55,30 +54,11 @@ public class ContactController {
     }
 
     @PostMapping("/add")
-    public String saveData(@Valid @ModelAttribute ContactForm contactForm, BindingResult bindingResult,
+    public String saveData(@Validated(CreateContact.class) @ModelAttribute ContactForm contactForm,
+            BindingResult bindingResult,
             Authentication authentication,
             RedirectAttributes redirectAttributes,
             Model model) {
-
-        MultipartFile file = contactForm.getContactImage();
-        if (file != null && !file.isEmpty()) {
-            if (file.getSize() > 2 * 1024 * 1024) {
-                bindingResult.rejectValue(
-                        "contactImage",
-                        "file.size",
-                        "File size should be less than 2MB");
-            }
-
-            String contentType = file.getContentType();
-
-            if (contentType == null || !contentType.startsWith("image/")) {
-                bindingResult.rejectValue(
-                        "contactImage",
-                        "file.type",
-                        "Only image files are allowed");
-            }
-
-        }
 
         if (bindingResult.hasErrors()) {
 
@@ -91,8 +71,9 @@ public class ContactController {
         try {
             String username = Helper.getEmailOfLoggedInUser(authentication);
 
-            logger.info("file Info----------------------------------------------------->: {}",
-                    contactForm.getContactImage().getOriginalFilename());
+            // logger.info("file Info----------------------------------------------------->:
+            // {}",
+            // contactForm.getContactImage().getOriginalFilename());
 
             String fileName = UUID.randomUUID().toString();
 
@@ -116,7 +97,7 @@ public class ContactController {
             // contact.setFavorite(true);
 
             contactService.saveContact(contact);
-            System.out.println(contact);
+            // System.out.println(contact);
             redirectAttributes.addFlashAttribute("message",
                     Message.builder().content("contact added success!").messageType(MessageType.green).build());
             return "redirect:/user/contacts/add";
@@ -138,11 +119,99 @@ public class ContactController {
         return "user/view_contact";
     }
 
-    @DeleteMapping("/delete")
-    public String deleteContact() {
+    @PostMapping("/delete/{id}")
+    public String deleteContact(@PathVariable String id) {
+        contactService.deleteContact(id);
+        return "redirect:/user/contacts/view";
 
-        return "redirect:user/view_contact";
+    }
 
+    @GetMapping("/edit/{id}")
+    public String editContactPage(@PathVariable String id, Model model) {
+
+        Contact contact = contactService.getContactById(id);
+
+        ContactForm contactForm = new ContactForm();
+
+        contactForm.setName(contact.getName());
+        contactForm.setEmail(contact.getEmail());
+        contactForm.setPhoneNumber(contact.getPhoneNumber());
+        contactForm.setAddress(contact.getAddress());
+        contactForm.setDescription(contact.getDescription());
+        contactForm.setWebsiteLink(contact.getWebsiteLink());
+        contactForm.setLinkedInLink(contact.getLinkedInLink());
+        contactForm.setFavorite(contact.isFavorite());
+
+        model.addAttribute("existingImageUrl", contact.getPicture());
+        System.out.println("IMAGE URL = " + contact.getPicture());
+        model.addAttribute("contactForm", contactForm);
+        return "user/edit_contact";
+    }
+
+    @PostMapping("/update/{id}")
+    public String updateContact(
+            @PathVariable("id") String id,
+            @Validated(UpdateContact.class) @ModelAttribute ContactForm contactForm,
+            BindingResult bindingResult,
+            Authentication authentication,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("errorMessage",
+                    Message.builder()
+                            .content("Please correct the following errors")
+                            .messageType(MessageType.red)
+                            .build());
+            return "user/edit_contact";
+        }
+
+        try {
+            Contact contact = contactService.getContactById(id);
+
+            // update basic fields
+            contact.setName(contactForm.getName());
+            contact.setEmail(contactForm.getEmail());
+            contact.setPhoneNumber(contactForm.getPhoneNumber());
+            contact.setAddress(contactForm.getAddress());
+            contact.setDescription(contactForm.getDescription());
+            contact.setLinkedInLink(contactForm.getLinkedInLink());
+            contact.setWebsiteLink(contactForm.getWebsiteLink());
+            contact.setFavorite(contactForm.isFavorite());
+
+            // ✅ IMAGE UPDATE (SAFE LOGIC)
+            if (contactForm.getContactImage() != null &&
+                    !contactForm.getContactImage().isEmpty()) {
+
+                // delete old image ONLY if exists
+                if (contact.getCloudinaryImagePublicId() != null) {
+                    imageService.deleteImage(contact.getCloudinaryImagePublicId());
+                }
+
+                String newPublicId = UUID.randomUUID().toString();
+                String newImageUrl = imageService.uploadImage(
+                        contactForm.getContactImage(),
+                        newPublicId);
+
+                contact.setPicture(newImageUrl);
+                contact.setCloudinaryImagePublicId(newPublicId);
+            }
+
+            contactService.updateContact(contact);
+
+            redirectAttributes.addFlashAttribute("message",
+                    Message.builder()
+                            .content("Contact updated successfully!")
+                            .messageType(MessageType.green)
+                            .build());
+
+            return "redirect:/user/contacts/view";
+
+        } catch (Exception exception) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Unable to update contact: " + exception.getMessage());
+            return "redirect:/user/contacts/view";
+        }
     }
 
 }

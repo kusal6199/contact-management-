@@ -1,7 +1,6 @@
 package com.scm.scm.services.impl;
 
 import java.io.IOException;
-import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,7 +23,7 @@ public class ImageServiceImpl implements ImageService {
     @Override
     public String uploadImage(MultipartFile contactImage, String filename) {
 
-//        String filename = UUID.randomUUID().toString();
+        // String filename = UUID.randomUUID().toString();
 
         try {
             byte[] data = new byte[contactImage.getInputStream().available()];
@@ -54,6 +53,15 @@ public class ImageServiceImpl implements ImageService {
                                 .crop(AppConstant.CONTACT_IMAGE_CROP))
                 .generate(publicId);
 
+    }
+
+    @Override
+    public void deleteImage(String publicId) {
+        try {
+            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+        } catch (IOException e) {
+            throw new RuntimeException("unable to delete image from cloudinary", e);
+        }
     }
 
 }

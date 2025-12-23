@@ -1,5 +1,6 @@
 package validators;
 
+import com.scm.scm.helper.FileValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 
