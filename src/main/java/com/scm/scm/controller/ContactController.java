@@ -4,6 +4,7 @@ import com.scm.scm.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,9 +15,11 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.scm.scm.entities.Contact;
+import com.scm.scm.helper.AppConstant;
 import com.scm.scm.helper.ContactForm;
 import com.scm.scm.helper.CreateContact;
 import com.scm.scm.helper.Helper;
@@ -110,12 +113,22 @@ public class ContactController {
     // contact view page
 
     @GetMapping("/view")
-    public String viewContactPage(Model model, Authentication authentication) {
+    public String viewContactPage(Model model, Authentication authentication,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "5") int size,
+            @RequestParam(value = "sortBy", defaultValue = "name") String sortBy,
+            @RequestParam(value = "direction", defaultValue = "asc") String direction) {
 
         User user = userService.getUserByEmail(Helper.getEmailOfLoggedInUser(authentication));
-        List<Contact> contactByUserId = contactService.getContactByUserId(user.getUserId());
+        // List<Contact> contactByUserId =
+        // contactService.getContactByUserId(user.getUserId());
+
+        Page<Contact> pageContacts = contactService.findByUser(user, page, size, sortBy, direction);
+
         // System.out.println(contactByUserId);
-        model.addAttribute("contacts", contactByUserId);
+
+        model.addAttribute("pageContacts", pageContacts);
+        model.addAttribute("pageSize", size);
         return "user/view_contact";
     }
 
@@ -212,6 +225,30 @@ public class ContactController {
                     "Unable to update contact: " + exception.getMessage());
             return "redirect:/user/contacts/view";
         }
+    }
+
+    @GetMapping("/search")
+    public String searchHandler(@RequestParam("field") String field, @RequestParam("keyword") String value,
+            @RequestParam(value = "size", defaultValue = AppConstant.pageSize + "") int size,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "sortBy", defaultValue = "name") String sortBy,
+            @RequestParam(value = "dirrection", defaultValue = "asc") String dirrection, Model model) {
+        logger.info("field {} keyword {}", field, value);
+
+        Page<Contact> pageContact = null;
+
+        if (field.equalsIgnoreCase("Name")) {
+            pageContact = contactService.searchByName(value, page, size, sortBy, dirrection);
+        } else if (field.equalsIgnoreCase("Email")) {
+            pageContact = contactService.searchByEmail(value, page, size, sortBy, dirrection);
+        } else if (field.equalsIgnoreCase("Phone")) {
+            pageContact = contactService.seachByPhone(value, page, size, sortBy, dirrection);
+        }
+
+        logger.info("serach result >------------------------->" + pageContact);
+        model.addAttribute("pageContacts", pageContact);
+
+        return "user/search";
     }
 
 }

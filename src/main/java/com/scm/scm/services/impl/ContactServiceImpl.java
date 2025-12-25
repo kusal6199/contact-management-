@@ -6,9 +6,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.scm.scm.entities.Contact;
+import com.scm.scm.entities.User;
 import com.scm.scm.helper.ResourceNotFoundException;
 import com.scm.scm.repository.ContactRepository;
 import com.scm.scm.services.ContactService;
@@ -74,14 +79,45 @@ public class ContactServiceImpl implements ContactService {
     }
 
     @Override
-    public List<Contact> searchContact(String name, String email, String phoneNumber) {
-        return null;
-    }
-
-    @Override
     public List<Contact> getContactByUserId(String id) {
         List<Contact> contacts = contactRepository.findByUser_UserId(id);
         return contacts;
     }
 
+    @Override
+    public Page<Contact> findByUser(User user, int page, int size, String sortBy, String dirrection) {
+
+        Sort sort = dirrection.equals("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+
+        var pageable = PageRequest.of(page, size);
+        return contactRepository.findByUser(user, pageable);
+    }
+
+    @Override
+    public Page<Contact> searchByName(String name, int page, int size, String sortBy, String dirrection) {
+
+        Sort sort = dirrection.equals("dsc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return contactRepository.findByNameContaining(name, pageable);
+    }
+
+    @Override
+    public Page<Contact> searchByEmail(String email, int page, int size, String sortBy, String dirrection) {
+        Sort sort = dirrection.equals("dsc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return contactRepository.findByEmailContaining(email, pageable);
+    }
+
+    @Override
+    public Page<Contact> seachByPhone(String phone, int page, int size, String sortBy, String dirrection) {
+        Sort sort = dirrection.equals("dsc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return contactRepository.findByPhoneNumberContaining(phone, pageable);
+    }
 }
